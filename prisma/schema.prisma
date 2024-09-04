@@ -1,0 +1,58 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  name          String    @id
+  email         String    @unique
+  address       String    
+  createdAt     DateTime  @default(now()) @map(name: "created_at")
+  updatedAt     DateTime  @updatedAt @map(name: "updated_at")
+  cars          Car[]
+  @@map(name: "users")
+}
+
+model Car {
+  carPlateNo       String @id
+  owner    User   @relation(fields: [ownerName], references: [name], onDelete: Cascade, onUpdate: Cascade)
+  ownerName  String
+  parkings   Parking[]
+  @@map(name: "cars")
+}
+
+model City {
+  id           Int @default(autoincrement()) @id
+  name         String @unique
+  pricePerHour Decimal
+  parkingAreas   ParkingArea[]
+  @@map(name: "cities")
+}
+
+model ParkingArea {
+  id      Int  @default(autoincrement()) @id
+  name    String
+  city    City    @relation(fields: [cityId], references: [id])
+  cityId  Int
+  parkings   Parking[]
+  @@map(name: "parkingAreas")
+}
+
+model Parking {
+  id      Int  @default(autoincrement()) @id
+  car    Car   @relation(fields: [carPlateNo], references: [carPlateNo], onDelete: Cascade, onUpdate: Cascade)
+  carPlateNo       String
+  parkingArea    ParkingArea   @relation(fields: [parkingAreaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  parkingAreaId       Int
+  startTime     DateTime  @default(now()) @map(name: "start_time")
+  endTime     DateTime  @default(now()) @map(name: "end_time")
+  @@unique([carPlateNo, parkingAreaId, startTime])
+  @@map(name: "parkings")
+}
